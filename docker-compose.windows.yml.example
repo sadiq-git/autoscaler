@@ -1,0 +1,17 @@
+services:
+  monitor:
+    environment:
+      DOCKER_HOST: tcp://host.docker.internal:2375
+      DOCKER_API_VERSION: "1.43"
+    volumes: []
+  executor:
+    environment:
+      DOCKER_HOST: tcp://host.docker.internal:2375
+      DOCKER_API_VERSION: "1.43"
+    volumes: []
+  watcher:
+    environment:
+      DOCKER_HOST: tcp://host.docker.internal:2375
+      DOCKER_API_VERSION: "1.43"
+    volumes:
+      - ./nginx/conf.d:/work/conf.d

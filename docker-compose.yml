@@ -1,0 +1,89 @@
+services:
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+
+  monitor:
+    build: .
+    command: python monitor.py
+    environment:
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      SAMPLE_INTERVAL: ${SAMPLE_INTERVAL:-3}
+      PROBE_REQUESTS: ${PROBE_REQUESTS:-40}
+      TARGET_URL: ${TARGET_URL:-http://lb/}
+      TIMEOUT_S: ${TIMEOUT_S:-2.5}
+    depends_on: [redis]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  planner:
+    build: .
+    command: python planner.py
+    environment:
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      LLM_API_KEY: ${LLM_API_KEY}
+      LLM_URL: ${LLM_URL:-https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent}
+      UPSCALE_P95_MS: ${UPSCALE_P95_MS:-300}
+      DOWNSCALE_P95_MS: ${DOWNSCALE_P95_MS:-120}
+      COOLDOWN_SEC: ${COOLDOWN_SEC:-20}
+    depends_on: [redis]
+
+  executor:
+    build: .
+    command: python executor.py
+    environment:
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      MAX_REPLICAS: ${MAX_REPLICAS:-5}
+    depends_on: [redis]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  subscriber:
+    build: .
+    command: python subscriber_results.py
+    environment:
+      REDIS_HOST: ${REDIS_HOST:-redis}
+    depends_on: [redis]
+
+  app:
+    build: ./target_app
+    image: agentic/cpu-app:latest
+    container_name: app
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import sys,urllib.request; \
+        sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:8080/',timeout=2) else 1\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+    labels: { agentic.target: "true" }
+    environment:
+      PORT: "8080"
+      EXTRA_DELAY_MS: "120" 
+    expose: ["8080"]
+
+  lb:
+    image: nginx:stable-alpine
+    container_name: lb
+    depends_on: 
+        app:
+           condition: service_healthy
+    ports: ["8081:80"]
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d
+
+  watcher:
+    build: .
+    command: python watcher.py
+    depends_on: [lb]
+    volumes:
+      - ./nginx/conf.d:/work/conf.d
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  dashboard:
+    build: .
+    command: python dashboard.py
+    depends_on: [redis]
+    ports: ["8090:8090"]

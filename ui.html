@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Agentic Autoscaler v4.3</title>
+  <style>
+    body{font-family:system-ui,Arial;margin:20px}
+    table{border-collapse:collapse}
+    td,th{padding:6px 8px;border-bottom:1px solid #eee}
+    .k{font-weight:600}
+  </style>
+</head>
+<body>
+  <h1>Agentic Autoscaler v4.3 (Gemini)</h1>
+  <div>
+    <h3>Latency</h3>
+    <div id="lat">Loading…</div>
+  </div>
+  <div>
+    <h3>Recent Actions</h3>
+    <table><thead><tr><th>Action</th><th>Target</th><th>Reason</th><th>Result</th></tr></thead><tbody id="ev"></tbody></table>
+  </div>
+<script>
+async function refresh(){
+  const d = await (await fetch('/api/state')).json();
+  const L = d.latency||{};
+  const lat = document.getElementById('lat');
+  lat.innerHTML = `
+    <div><span class="k">Endpoint:</span> ${L.endpoint||''}</div>
+    <div><span class="k">p95:</span> ${L.p95_ms??0} ms</div>
+    <div><span class="k">avg:</span> ${L.avg_ms??0} ms</div>
+    <div><span class="k">success:</span> ${(L.success_rate??0).toFixed(3)}</div>
+    <div><span class="k">window:</span> ${L.window_sec??0} s</div>
+  `;
+  const ev = document.getElementById('ev'); ev.innerHTML='';
+  (d.events||[]).slice().reverse().forEach(e=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${e.action||''}</td><td>${e.target||''}</td><td>${e.reason||''}</td><td>${e.result?.message||e.result?.status||''}</td>`;
+    ev.appendChild(tr);
+  });
+}
+setInterval(refresh, 1200); refresh();
+</script>
+</body>
+</html>
