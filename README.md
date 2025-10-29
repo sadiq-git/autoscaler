@@ -1,4 +1,4 @@
-# Agentic PoC v4.3 — Latency autoscaling with Gemini Planner
+# Agentic PoC v4.4 — Latency autoscaling with Gemini Planner
 #
 # What it does
 # - monitor.py probes the LB (http://lb/) each window, computes avg & p95 latency
