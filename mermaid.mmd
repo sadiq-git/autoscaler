@@ -1,41 +1,46 @@
 flowchart TB
-  subgraph Clients["Clients / Loadgen"]
-    A[Users / Loadgen]
-  end
 
-  subgraph Edge["Edge / LB"]
-    LB[nginx LB]
-  end
+subgraph Clients
+  A["Users and Load Generator"]
+end
 
-  subgraph Control["Control Plane"]
-    MON[Monitor]
-    REDIS((Redis Pub/Sub))
-    PLN[Planner (Gemini)]
-    EXEC[Executor]
-    WATCH[Watcher]
-    SUB[Subscriber]
-    DASH[Dashboard]
-    LLM[(Gemini LLM API)]
-  end
+subgraph Edge
+  LB["nginx LB"]
+end
 
-  subgraph AppPool["Application Pool"]
-    direction LR
-    APP1[app]
-    APPN[app-dup-*]
-  end
+subgraph Control
+  MON["Monitor"]
+  REDIS["Redis PubSub"]
+  PLN["Planner - Gemini"]
+  EXEC["Executor"]
+  WATCH["Watcher"]
+  SUB["Subscriber"]
+  DASH["Dashboard"]
+  LLM["Gemini LLM API"]
+end
 
-  A -->|HTTP traffic| LB
-  LB -->|forwards| APP1
-  LB -->|forwards| APPN
+subgraph AppPool
+  direction LR
+  APP1["app"]
+  APPN["app duplicated"]
+end
 
-  MON -->|probe LB metrics| LB
-  MON -->|publish alerts| REDIS
-  PLN -->|subscribe alerts| REDIS
-  PLN -->|optional call| LLM
-  PLN -->|publish plan/actions| REDIS
-  EXEC -->|subscribe actions| REDIS
-  EXEC -->|start/stop app replicas| AppPool
-  WATCH -->|watch containers| AppPool
-  WATCH -->|update upstreams/nginx.conf| LB
-  SUB -->|subscribe results| REDIS
-  DASH -->|read state (poll/pubsub)| REDIS
+A --> LB
+LB --> APP1
+LB --> APPN
+
+MON --> LB
+MON --> REDIS
+
+PLN --> REDIS
+PLN --> LLM
+PLN --> REDIS
+
+EXEC --> REDIS
+EXEC --> AppPool
+
+WATCH --> AppPool
+WATCH --> LB
+
+SUB --> REDIS
+DASH --> REDIS
