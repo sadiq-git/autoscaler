@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="700" viewBox="0 0 1000 700">
+  <style>
+    .box { fill:#eef; stroke:#333; stroke-width:1.5; rx:6; }
+    .ctrl { fill:#efe; }
+    .infra { fill:#f9f; }
+    text { font-family: Arial, sans-serif; font-size:12px; }
+  </style>
+  <rect x="40" y="30" width="220" height="70" class="box infra"></rect>
+  <text x="60" y="55">Clients / Loadgen</text>
+  <rect x="290" y="30" width="200" height="70" class="box"></rect>
+  <text x="330" y="55">nginx LB</text>
+
+  <rect x="40" y="130" width="920" height="230" class="box ctrl"></rect>
+  <text x="60" y="150">Control Plane</text>
+  <text x="70" y="180">Monitor → Redis → Planner → Executor → Watcher</text>
+  <text x="70" y="200">Planner may call Gemini LLM (optional)</text>
+
+  <rect x="40" y="390" width="920" height="200" class="box"></rect>
+  <text x="60" y="410">Application Pool</text>
+  <text x="70" y="440">app (primary), app-dup-* (replicas)</text>
+
+  <line x1="260" y1="65" x2="290" y2="65" stroke="#333" marker-end="url(#arrow)"/>
+  <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="6" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#333"/></marker></defs>
+
+  <text x="70" y="610">Dashboard: http://localhost:8090 · LB: http://localhost:8081</text>
+</svg>
